@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  top.liujingyanghui.crypto.mybatisplus.config.MybatisInterceptorAutoConfiguration,\
+  top.liujingyanghui.crypto.mybatisplus.config.MybatisDecryptInterceptor
+  

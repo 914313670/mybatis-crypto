@@ -1,0 +1,12 @@
+# Maven #
+target/
+.flattened-pom.xml
+
+# IDEA #
+.idea/
+*.iml
+
+# Eclipse #
+.settings/
+.classpath
+.project
