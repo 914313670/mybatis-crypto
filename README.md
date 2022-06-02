@@ -38,7 +38,7 @@
 1. 所有加密的实体必须实现Serializable接口
 
 #### 一、创建加解密规则
-```
+```java
 /**
  * 手机号加解密
  *
@@ -76,7 +76,7 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 
 #### 二、实体类和属性加注解
 在需要加解密的实体上加@CryptoClass和@CryptoString注解
-```
+```java
     @Data
     @CryptoClass    // 标识这个实体中有属性需要加解密
     @EqualsAndHashCode(callSuper = true)
@@ -95,7 +95,7 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 ```
 #### 三、Tk MyBatis框架加解密的使用
 * 增
-```
+```java
     public void insert() {
         User user = new User();
         user.setPhone("13312345678");
@@ -105,7 +105,7 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
     }
 ```
 * 查询与更新
-```
+```java
     public void queryAndUpdate() {
         // example 会根据实体的注解加密后去查询
         Example example = new Example(User.class);
@@ -122,17 +122,17 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 为了能够让框架封装的Wrapper支持根据实体类和属性的注解进行相应的加解密  
 需要使用 LambdaQueryWrapperX、LambdaUpdateWrapperX、QueryWrapperX、UpdateWrapperX 代替框架的相应Wrapper去操作  
 同时提供了快速创建相应对象的静态方法，具体使用如下：
-```
- LambdaQueryWrapperX<User> wrapper = WrapperX.lambdaQuery(User.class);
- 
- QueryWrapperX<User> wrapper = WrapperX.query(User.class);
- 
- LambdaUpdateWrapperX<User> wrapper = WrapperX.lambdaUpdate(User.class);
- 
- UpdateWrapperX<User> wrapper = WrapperX.update(User.class);
+```java
+     LambdaQueryWrapperX<User> wrapper = WrapperX.lambdaQuery(User.class);
+     
+     QueryWrapperX<User> wrapper = WrapperX.query(User.class);
+     
+     LambdaUpdateWrapperX<User> wrapper = WrapperX.lambdaUpdate(User.class);
+     
+     UpdateWrapperX<User> wrapper = WrapperX.update(User.class);
 ```
 * 增
-```
+```java
     public void insert() {
         User user = new User();
         user.setPhone("13312345678");
@@ -142,7 +142,7 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
     }
 ```
 * 查询与更新
-```
+```java
     public void queryAndUpdate() {
         // 新建一个 LambdaQueryWrapperX 这种方式支持根据实体注解去加密查询
         LambdaQueryWrapperX<User> wrapper = WrapperX.lambdaQuery(User.class); 
@@ -156,7 +156,7 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 ```
 
 #### 五、mapper接口中方法加解密的使用
-```
+```java
 public interface UserMapper extends Mapper<User> {
 
     // 入参和出参都为Map情况，标识入参和出参中key为phone的属性使用PhoneCryptoRule规则去加解密
@@ -207,7 +207,7 @@ public interface UserMapper extends Mapper<User> {
 }
 ```
 mapper接口方法参数为实体，实体中属性复杂情况说明
-```
+```java
 @Data
 @CryptoClass
 public class UserParam implements Serializable {
