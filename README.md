@@ -277,6 +277,5 @@ public class UserParam implements Serializable {
 
 ## 捐赠
 如果它给你带来了帮助，可以请开源者吃包辣条喝杯奶茶哟！在此表示感谢^_^
-![微信](https://i0.hdslb.com/bfs/album/53af8aaa4d99fe3a93ea252631850fdc12720c55.png)
-![支付宝](https://i0.hdslb.com/bfs/album/b3ba34958b4cc0372389a093a4ab2a8a5920c80e.png)
-
+![微信](wx.png)
+![微信](zfb.png)
