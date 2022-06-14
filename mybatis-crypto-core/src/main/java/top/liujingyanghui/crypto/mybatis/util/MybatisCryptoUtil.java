@@ -215,7 +215,7 @@ public class MybatisCryptoUtil {
                     Collection<Object> coll = (Collection<Object>) object;
                     if (CollUtil.isNotEmpty(coll)) {
                         Object firstObj = CollUtil.getFirst(coll.iterator());
-                        if (firstObj instanceof String) {// 集合泛型为String
+                        if (!(coll.size() == 1 && Objects.isNull(firstObj)) && firstObj instanceof String) {// 集合泛型为String
                             ICryptoRule cryptoRule = cryptoString.rule().newInstance();
                             Collection<Object> newColl = CollUtil.create(String.class);
                             for (int i = 0; i < coll.size(); i++) {
@@ -270,7 +270,7 @@ public class MybatisCryptoUtil {
                     Collection<?> coll = (Collection<?>) object;
                     if (CollUtil.isNotEmpty(coll)) {
                         Object firstObj = CollUtil.getFirst(coll);
-                        if (firstObj instanceof Map) {
+                        if (!(coll.size() == 1 && Objects.isNull(firstObj)) && firstObj instanceof Map) {
                             paramCrypto(object, models, mode);
                         }
                     }
@@ -459,6 +459,9 @@ public class MybatisCryptoUtil {
                 return;
             }
             Object first = CollUtil.getFirst(coll);
+            if (Objects.isNull(first)){
+                return;
+            }
             if (!(first instanceof String)) {
                 return;
             }

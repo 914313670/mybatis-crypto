@@ -45,6 +45,9 @@ public class MybatisDecryptInterceptor implements Interceptor {
                 return coll;
             }
             Object obj = CollUtil.getFirst(coll);
+            if (Objects.isNull(obj)){
+                return resultObject;
+            }
             if (MybatisCryptoUtil.hasCryptoClass(obj)) { // 泛型为实体
                 MybatisCryptoUtil.paramCrypto(resultObject, null, CryptoMode.DECRYPT);
             } else if (obj instanceof Map) { // 泛型为Map
