@@ -45,7 +45,7 @@ public class MybatisDecryptInterceptor implements Interceptor {
                 return coll;
             }
             Object obj = CollUtil.getFirst(coll);
-            if (Objects.isNull(obj)){
+            if (Objects.isNull(obj)) {
                 return resultObject;
             }
             if (MybatisCryptoUtil.hasCryptoClass(obj)) { // 泛型为实体
@@ -62,7 +62,7 @@ public class MybatisDecryptInterceptor implements Interceptor {
                 MappedStatement mappedStatement = getMappedStatement((DefaultResultSetHandler) invocation.getTarget());
                 String namespace = MybatisCryptoUtil.getNamespace(mappedStatement);
                 Method method = MybatisCryptoUtil.getMethodByNamespace(namespace);
-                CryptoString cryptoString = MybatisCryptoUtil.getCryptoStringByMethod(method,CryptoMode.DECRYPT);
+                CryptoString cryptoString = MybatisCryptoUtil.getCryptoStringByMethod(method, CryptoMode.DECRYPT);
                 if (Objects.isNull(cryptoString)) {
                     return resultObject;
                 }
@@ -75,6 +75,8 @@ public class MybatisDecryptInterceptor implements Interceptor {
                     result.add(cryptoRule.decrypt((String) item));
                 }
                 return result;
+            } else {
+                return resultObject;
             }
         } else {
             if (MybatisCryptoUtil.hasCryptoClass(resultObject)) {

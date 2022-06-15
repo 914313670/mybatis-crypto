@@ -1,5 +1,6 @@
 package top.liujingyanghui.crypto.mybatisplus.config;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -73,7 +74,18 @@ public class MybatisEncryptInterceptor implements Interceptor {
 
         // HashMap 实现了Serializable，可以进行深拷贝
         Object cloneMap = MybatisCryptoUtil.mapClone(parameterObjectMap, namespace);
-        args[1] = cloneMap;
+        if (cloneMap instanceof Map) {
+            Map<String, Object> cloneMapTemp = (Map<String, Object>) cloneMap;
+            Object page = cloneMapTemp.get("page");
+            if (Objects.nonNull(page) && page instanceof Page) {
+                cloneMapTemp.put("page", parameterObjectMap.get("page"));
+                args[1] = cloneMapTemp;
+            } else {
+                args[1] = cloneMap;
+            }
+        } else {
+            args[1] = cloneMap;
+        }
 
         Set<CryptKeyModel> models = MybatisCryptoUtil.mappedStatement2MapperCryptoModel(mappedStatements, CryptoMode.ENCRYPT);
         MybatisCryptoUtil.paramCrypto(cloneMap, models, CryptoMode.ENCRYPT);
