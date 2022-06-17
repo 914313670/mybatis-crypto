@@ -45,7 +45,6 @@ public class MybatisEncryptInterceptor implements Interceptor {
 
         // 处理使用Example查询情况
         if (paramObject instanceof Example) {
-            TkMybatisCryptoUtil.exampleEncrypt((Example) paramObject);
             return invocation.proceed();
         }
 

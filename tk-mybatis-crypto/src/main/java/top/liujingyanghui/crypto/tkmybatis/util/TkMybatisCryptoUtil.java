@@ -62,4 +62,45 @@ public class TkMybatisCryptoUtil {
             }
         }
     }
+
+    /**
+     * Example 对象解密
+     *
+     * @param example example对象
+     */
+    public static void exampleDecrypt(Example example) throws InstantiationException, IllegalAccessException {
+        Class<?> entityClass = example.getEntityClass();
+        CryptoClass cryptoClass = AnnotationUtils.findAnnotation(entityClass, CryptoClass.class);
+        if (Objects.isNull(cryptoClass)) {
+            return;
+        }
+        for (Example.Criteria e : example.getOredCriteria()) {
+            for (Example.Criterion c : e.getAllCriteria()) {
+                Object value = c.getValue();
+                String condition = c.getCondition();
+                if (value != null && !StrUtil.isEmpty(condition)) {
+                    String[] strings = condition.split(" ");
+                    if (strings.length > 0) {
+                        Field field = ReflectUtil.getField(entityClass, NamingCase.toCamelCase(strings[0]));
+                        CryptoString cryptoString = field.getAnnotation(CryptoString.class);
+                        if (Objects.nonNull(cryptoString)) {
+                            Class<? extends ICryptoRule> rule = cryptoString.rule();
+                            ICryptoRule cryptoRule = rule.newInstance();
+                            if (value instanceof String) {
+                                ReflectUtil.setFieldValue(c, "value", cryptoRule.decrypt((String) value));
+                            } else if (value instanceof List) {
+                                List valueList = (List) value;
+                                if (CollUtil.isNotEmpty(valueList) && valueList.get(0) instanceof String) {
+                                    for (int i = 0; i < valueList.size(); i++) {
+                                        valueList.set(i, cryptoRule.decrypt((String) valueList.get(i)));
+                                    }
+                                }
+                                ReflectUtil.setFieldValue(c, "value", valueList);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
