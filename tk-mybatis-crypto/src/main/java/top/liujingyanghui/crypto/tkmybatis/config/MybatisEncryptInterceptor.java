@@ -1,5 +1,7 @@
 package top.liujingyanghui.crypto.tkmybatis.config;
 
+import cn.hutool.core.map.MapUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -15,10 +17,7 @@ import top.liujingyanghui.crypto.mybatis.util.MybatisCryptoUtil;
 import top.liujingyanghui.crypto.tkmybatis.util.TkMybatisCryptoUtil;
 
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 查询参数加密拦截器
@@ -76,8 +75,38 @@ public class MybatisEncryptInterceptor implements Interceptor {
             }
         }
 
+        // 去除Example对象，防止克隆报错
+        Map<String, Example> exampleMap = MapUtil.newHashMap();
+        Iterator<Map.Entry<String, Object>> iterator = parameterObjectMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> next = iterator.next();
+            if (next.getValue() instanceof Example) {
+                exampleMap.put(next.getKey(), (Example) next.getValue());
+                iterator.remove();
+            }
+        }
+
         Object cloneMap = MybatisCryptoUtil.mapClone(parameterObjectMap, namespace);
-        args[1] = cloneMap;
+        if (cloneMap instanceof Map) {
+            Map<String, Object> cloneMapTemp = (Map<String, Object>) cloneMap;
+
+            if (MapUtil.isNotEmpty(exampleMap)) {
+                Set<Map.Entry<String, Example>> entries = exampleMap.entrySet();
+                for (Map.Entry<String, Example> entry : entries) {
+                    cloneMapTemp.put(entry.getKey(), entry.getValue());
+                    parameterObjectMap.put(entry.getKey(), entry.getValue());
+                }
+            }
+            Object page = cloneMapTemp.get("page");
+            if (Objects.nonNull(page) && page instanceof Page) {
+                cloneMapTemp.put("page", parameterObjectMap.get("page"));
+                args[1] = cloneMapTemp;
+            } else {
+                args[1] = cloneMap;
+            }
+        } else {
+            args[1] = cloneMap;
+        }
 
         Set<CryptKeyModel> models = MybatisCryptoUtil.mappedStatement2MapperCryptoModel(mappedStatements, CryptoMode.ENCRYPT);
         MybatisCryptoUtil.paramCrypto(cloneMap, models, CryptoMode.ENCRYPT);

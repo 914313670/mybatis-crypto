@@ -15,7 +15,7 @@
     </modules>
 
     <properties>
-        <revision>1.0.8</revision>
+        <revision>1.0.9</revision>
         <mybatis.plus.version>3.5.2</mybatis.plus.version>
     </properties>
 
