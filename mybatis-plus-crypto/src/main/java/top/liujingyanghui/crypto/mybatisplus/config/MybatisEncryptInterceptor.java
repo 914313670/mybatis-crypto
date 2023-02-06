@@ -1,5 +1,6 @@
 package top.liujingyanghui.crypto.mybatisplus.config;
 
+import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
@@ -16,10 +17,7 @@ import top.liujingyanghui.crypto.mybatis.rule.ICryptoRule;
 import top.liujingyanghui.crypto.mybatis.util.MybatisCryptoUtil;
 
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 查询参数加密拦截器
@@ -72,20 +70,23 @@ public class MybatisEncryptInterceptor implements Interceptor {
             }
         }
 
-        // HashMap 实现了Serializable，可以进行深拷贝
         Object cloneMap = MybatisCryptoUtil.mapClone(parameterObjectMap, namespace);
         if (cloneMap instanceof Map) {
             Map<String, Object> cloneMapTemp = (Map<String, Object>) cloneMap;
-            Object page = cloneMapTemp.get("page");
-            if (Objects.nonNull(page) && page instanceof Page) {
-                cloneMapTemp.put("page", parameterObjectMap.get("page"));
-                args[1] = cloneMapTemp;
-            } else {
-                args[1] = cloneMap;
+            Iterator<Map.Entry<String, Object>> iterator = cloneMapTemp.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Object> entry = iterator.next();
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof AbstractWrapper || value instanceof Page ){
+                    cloneMapTemp.put(key,parameterObjectMap.get(key));
+                }
             }
+            args[1] = cloneMapTemp;
         } else {
             args[1] = cloneMap;
         }
+
 
         Set<CryptKeyModel> models = MybatisCryptoUtil.mappedStatement2MapperCryptoModel(mappedStatements, CryptoMode.ENCRYPT);
         MybatisCryptoUtil.paramCrypto(cloneMap, models, CryptoMode.ENCRYPT);

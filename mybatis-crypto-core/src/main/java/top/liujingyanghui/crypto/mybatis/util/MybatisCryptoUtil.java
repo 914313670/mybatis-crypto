@@ -20,6 +20,8 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 加解密公共组件
@@ -196,7 +198,7 @@ public class MybatisCryptoUtil {
      * @param paramsObject 实体对象
      * @param mode         加解密模式
      */
-    public static <T> T entityCrypto(T paramsObject, CryptoMode mode) throws IllegalAccessException, InstantiationException {
+    public static <T> T entityCrypto(T paramsObject, CryptoMode mode) throws IllegalAccessException, InstantiationException, NoSuchFieldException {
         Class<?> paramObjectClass = paramsObject.getClass();
         Field[] declaredFields = paramObjectClass.getDeclaredFields();
         for (Field field : declaredFields) {
@@ -303,7 +305,7 @@ public class MybatisCryptoUtil {
      * @param models          CryptoKey注解信息
      * @param mode            加解密模式
      */
-    public static void paramCrypto(Object parameterObject, Set<CryptKeyModel> models, CryptoMode mode) throws InstantiationException, IllegalAccessException {
+    public static void paramCrypto(Object parameterObject, Set<CryptKeyModel> models, CryptoMode mode) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
         List<Object> alreadyList = new ArrayList<>();
 
         if (parameterObject instanceof Map) {
@@ -312,9 +314,6 @@ public class MybatisCryptoUtil {
             for (Map.Entry<String, Object> mapEntity : map.entrySet()) {
                 Object mapEntityValue = mapEntity.getValue();
                 if (Objects.isNull(mapEntityValue)) {
-                    continue;
-                }
-                if (mapEntityValue instanceof AbstractWrapper){
                     continue;
                 }
                 if (isEqualityListItem(alreadyList, mapEntityValue)) {
@@ -340,6 +339,32 @@ public class MybatisCryptoUtil {
             for (Object item : list) {
                 paramCrypto(item, models, mode);
             }
+        } else if (parameterObject instanceof AbstractWrapper) {
+            AbstractWrapper wrapper = (AbstractWrapper) parameterObject;
+            Class<?> modelClazz = wrapper.getEntityClass();
+            String sqlSegment = wrapper.getExpression().getSqlSegment();
+            Map<String, Object> valuePairs = wrapper.getParamNameValuePairs();
+
+            Field paramNameValuePairs = AbstractWrapper.class.getDeclaredField("paramNameValuePairs");
+            String regex = wrapper.getParamAlias() + "." + paramNameValuePairs.getName() + ".";
+            sqlSegment = sqlSegment.replaceAll(regex, "");
+            HashMap<String, String> map = resolve(sqlSegment);
+            if (map.size() > 0) {
+                for (Map.Entry<String, String> e : map.entrySet()) {
+                    Object value = valuePairs.get(e.getKey());
+                    if (value != null) {
+                        CryptoString cryptoString = ReflectUtil.getField(modelClazz, StrUtil.toCamelCase(e.getValue())).getAnnotation(CryptoString.class);
+                        if (Objects.nonNull(cryptoString)) {
+                            if (value instanceof String) {
+                                String strValue = (String) value;
+                                String strValueTemp = strValue.replaceAll("%", "");
+                                ICryptoRule cryptoRule = cryptoString.rule().newInstance();
+                                valuePairs.put(e.getKey(), strValue.replace(strValueTemp, cryptoRule.encrypt(strValueTemp)));
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             CryptoClass cryptoClass = AnnotationUtil.getAnnotation(parameterObject.getClass(), CryptoClass.class);
             if (Objects.nonNull(cryptoClass)) {
@@ -347,6 +372,26 @@ public class MybatisCryptoUtil {
             }
         }
     }
+
+    private static HashMap<String, String> resolve(String line) {
+        HashMap map = new HashMap<String, String>();
+//        String line = "(mobile = #{MPGENVAL1} AND status LIKE #{MPGENVAL2} AND id IN (#{MPGENVAL3},#{MPGENVAL4},#{MPGENVAL5}) AND ((id = #{MPGENVAL6}))) GROUP BY id HAVING id > #{MPGENVAL7} ORDER BY add_blacklist_time DESC";
+        String syntax = "(?:=|!=|LIKE|NOT LIKE|IN|NOT IN|>|<|<=|>=|<>)";
+        String pattern = "(\\w+\\s*" + syntax + "\\s*[\\w\\S]*)(\\#\\{\\w+\\})";
+
+        Matcher m = Pattern.compile(pattern).matcher(line);
+        while (m.find()) {
+            String syntaxLine = m.group(0).replaceAll("\\(", "").replaceAll("\\)", "").replaceAll("#", "").replaceAll("\\{", "").replaceAll("\\}", "");
+            Matcher m2 = Pattern.compile(syntax).matcher(syntaxLine);
+            if (m2.find()) {
+                String[] syntaxArray = syntaxLine.split(m2.group(0));
+                Arrays.stream(syntaxArray[1].split(",")).forEach(v -> map.put(v.trim(), syntaxArray[0].trim()));
+            }
+        }
+
+        return map;
+    }
+
 
     /**
      * 字段加密
@@ -437,7 +482,7 @@ public class MybatisCryptoUtil {
      * @param cryptoString       加密注解
      * @param parameterObjectMap 参数
      */
-    public static void stringsEncryptHandle(CryptoString cryptoString, Map<String, Object> parameterObjectMap) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void stringsEncryptHandle(CryptoString cryptoString, Map<String, Object> parameterObjectMap) throws InstantiationException, IllegalAccessException {
         Object mapValue = null;
         for (Map.Entry<String, Object> mapEntity : parameterObjectMap.entrySet()) {
             Object mapEntityValue = mapEntity.getValue();
@@ -459,7 +504,7 @@ public class MybatisCryptoUtil {
                 return;
             }
             Object first = CollUtil.getFirst(coll);
-            if (Objects.isNull(first)){
+            if (Objects.isNull(first)) {
                 return;
             }
             if (!(first instanceof String)) {
@@ -494,7 +539,7 @@ public class MybatisCryptoUtil {
      * @param namespace 方法命名空间
      * @param args      参数
      */
-    public static void singleEntityEncryptHandle(String namespace, Object[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void singleEntityEncryptHandle(String namespace, Object[] args) throws InstantiationException, IllegalAccessException, NoSuchFieldException {
         Object paramObject = args[1];
         Class<?> paramObjectClass = paramObject.getClass();
         CryptoClass cryptoClass = AnnotationUtil.getAnnotation(paramObjectClass, CryptoClass.class);
