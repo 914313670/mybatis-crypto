@@ -119,9 +119,8 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 ```
 
 #### 四、MyBatis Plus框架加解密的使用
-为了能够让框架封装的Wrapper支持根据实体类和属性的注解进行相应的加解密  
-需要使用 LambdaQueryWrapperX、LambdaUpdateWrapperX、QueryWrapperX、UpdateWrapperX 代替框架的相应Wrapper去操作  
-同时提供了快速创建相应对象的静态方法，具体使用如下：
+从1.1.0版本开始支持使用MP框架内置方法进行加解密；  
+1.1.0以下版本需使用以下增强方法进行加解密：
 ```java
      LambdaQueryWrapperX<User> wrapper = WrapperX.lambdaQuery(User.class);
      
@@ -144,8 +143,11 @@ public class PhoneCryptoRule extends AbstractCryptoRule {
 * 查询与更新
 ```java
     public void queryAndUpdate() {
-        // 新建一个 LambdaQueryWrapperX 这种方式支持根据实体注解去加密查询
+        // 1.1.0及以上版本
+        LambdaQueryWrapper<User> wrapper = Wrappers.lambdaQuery(User.class);
+        // 1.1.0以下版本
         LambdaQueryWrapperX<User> wrapper = WrapperX.lambdaQuery(User.class); 
+        
         wrapper.eq(User::getPhone,"13333333333");
         // 查询出来的数据为解密后数据
         User user = userMapper.selectOne(wrapper);
